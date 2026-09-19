@@ -1,0 +1,271 @@
+﻿@{
+    ViewData["Title"] = "Gestión de Propietarios";
+}
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <h1>Listado de Propietarios</h1>
+    </div>
+    <div class="col-md-4">
+        <button type="button" class="btn btn-primary float-end" onclick="openModal(false)">
+            <i class="fa-solid fa-plus"></i> Crear Propietario
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-striped table-bordered" id="tblPropietarios" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>Dirección</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Unificado -->
+<div class="modal fade" id="modalPropietario" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="idTitlePropietario">Crear Propietario</h5>
+                <button type="button" class="btn-close" onclick="clearFormPropietario()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formPropietario">
+                    <section class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="txtNombre" placeholder="Nombre" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="txtApellido" placeholder="Apellido" />
+                        </div>
+                    </section>
+                    <section class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="txtTelefono" placeholder="Teléfono" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="txtEmail" placeholder="Correo Electrónico" />
+                        </div>
+                    </section>
+                    <section class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="txtDireccion" placeholder="Dirección" />
+                        </div>
+                    </section>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" onclick="clearFormPropietario()">Cancelar</button>
+                <button id="btnModalSave" type="button" class="btn btn-outline-success" onclick="onSavePropietario()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+        var idPropietario = 0;
+        var listPropietarios = [];
+
+        $(document).ready(function () {
+            getAllPropietarios();
+        });
+
+        function getAllPropietarios() {
+            $.ajax({
+                url: '@Url.Action("GetAllPropietarios", "Propietarios")',
+                method: 'GET',
+                dataType: 'json',
+                success: function (result) {
+                    listPropietarios = result;
+                    loadTable(listPropietarios);
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            });
+        }
+
+        function loadTable(data) {
+            $('#tblPropietarios').DataTable({
+                data: data,
+                destroy: true,
+                responsive: true,
+                columns: [
+                    { data: 'nombre' },
+                    { data: 'apellido' },
+                    { data: 'telefono' },
+                    { data: 'email' },
+                    { data: 'direccion' },
+                    {
+                        data: null,
+                        render: function (data) {
+                            const id = data.idPropietario;
+                            return `
+                                <button class="btn btn-warning btn-sm" onclick="editPropietario(${id})">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deletePropietario(${id})">
+                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                </button>
+                            `;
+                        }
+                    }
+                ]
+            });
+        }
+
+        function openModal(isEdit) {
+            if (isEdit) {
+                $('#idTitlePropietario').html('Editar Propietario');
+                $('#btnModalSave').html('Actualizar');
+            } else {
+                $('#idTitlePropietario').html('Crear Propietario');
+                $('#btnModalSave').html('Crear');
+            }
+            $('#modalPropietario').modal('show');
+        }
+
+        function clearFormPropietario() {
+            $('#txtNombre').val('');
+            $('#txtApellido').val('');
+            $('#txtTelefono').val('');
+            $('#txtEmail').val('');
+            $('#txtDireccion').val('');
+            $('#modalPropietario').modal('hide');
+            idPropietario = 0;
+        }
+
+        function validateForm() {
+            if ($('#txtNombre').val() === '') {
+                $('#txtNombre').focus();
+                Swal.fire('Advertencia', 'El Nombre es obligatorio.', 'warning');
+                return false;
+            }
+            if ($('#txtApellido').val() === '') {
+                $('#txtApellido').focus();
+                Swal.fire('Advertencia', 'El Apellido es obligatorio.', 'warning');
+                return false;
+            }
+            return true;
+        }
+
+        function onSavePropietario() {
+            if (validateForm()) {
+                var entity = {
+                    nombre: $('#txtNombre').val(),
+                    apellido: $('#txtApellido').val(),
+                    telefono: $('#txtTelefono').val(),
+                    email: $('#txtEmail').val(),
+                    direccion: $('#txtDireccion').val()
+                };
+
+                if (idPropietario === 0) {
+                    addPropietario(entity);
+                } else {
+                    entity.idPropietario = idPropietario;
+                    confirmEditPropietario(entity);
+                }
+            }
+        }
+
+        function addPropietario(parameter) {
+            $.ajax({
+                url: '@Url.Action("AddPropietario", "Propietarios")',
+                method: 'POST',
+                data: parameter,
+                dataType: 'json',
+                success: function (result) {
+                    Swal.fire('Éxito', 'Registro creado exitosamente.', 'success');
+                    clearFormPropietario();
+                    getAllPropietarios();
+                },
+                error: function (error) {
+                    console.error(error);
+                    Swal.fire('Error', 'Ha ocurrido un error al guardar.', 'error');
+                }
+            });
+        }
+
+        function editPropietario(id) {
+            idPropietario = id;
+            const entity = listPropietarios.find(x => x.idPropietario == idPropietario);
+
+            if (entity) {
+                $('#txtNombre').val(entity.nombre);
+                $('#txtApellido').val(entity.apellido);
+                $('#txtTelefono').val(entity.telefono);
+                $('#txtEmail').val(entity.email);
+                $('#txtDireccion').val(entity.direccion);
+                openModal(true);
+            }
+        }
+
+        function confirmEditPropietario(parameter) {
+            $.ajax({
+                url: '@Url.Action("UpdatePropietario", "Propietarios")',
+                method: 'PUT',
+                data: parameter,
+                dataType: 'json',
+                success: function (result) {
+                    Swal.fire('Éxito', 'Registro actualizado exitosamente.', 'success');
+                    clearFormPropietario();
+                    getAllPropietarios();
+                },
+                error: function (error) {
+                    console.error(error);
+                    Swal.fire('Error', 'Ha ocurrido un error al actualizar.', 'error');
+                }
+            });
+        }
+
+        function deletePropietario(id) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "No podrás revertir este cambio.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    confirmDeletePropietario(id);
+                }
+            });
+        }
+
+        function confirmDeletePropietario(id) {
+            $.ajax({
+                url: '@Url.Action("DeletePropietario", "Propietarios")',
+                method: 'DELETE',
+                data: { id: id },
+                dataType: 'json',
+                success: function (result) {
+                    Swal.fire('Eliminado', 'El registro ha sido eliminado.', 'success');
+                    getAllPropietarios();
+                },
+                error: function (error) {
+                    console.error(error);
+                    Swal.fire('Error', 'Ha ocurrido un error al eliminar el registro.', 'error');
+                }
+            });
+        }
+    </script>
+}

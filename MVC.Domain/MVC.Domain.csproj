@@ -10,8 +10,4 @@
     <ProjectReference Include="..\MVC.Data\MVC.Data.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Services\Interfaces\" />
-  </ItemGroup>
-
 </Project>

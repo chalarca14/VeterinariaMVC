@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MVC.Data.Data;
+using MVC.Domain.Services;
+using MVC.Domain.Services.Interfaces;
 
 namespace VeterinariaMVC
 {
@@ -20,7 +22,10 @@ namespace VeterinariaMVC
             });
             #endregion
 
+            #region Inyeccion de dependencias
+            builder.Services.AddScoped<IPropietarioServices, PropietarioServices>();
 
+            #endregion
 
             var app = builder.Build();
 
