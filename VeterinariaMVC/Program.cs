@@ -24,7 +24,7 @@ namespace VeterinariaMVC
 
             #region Inyeccion de dependencias
             builder.Services.AddScoped<IPropietarioServices, PropietarioServices>();
-
+            builder.Services.AddScoped<IMascotaServices, MascotaServices>();
             #endregion
 
             var app = builder.Build();

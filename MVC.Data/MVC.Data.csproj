@@ -20,6 +20,10 @@
     </PackageReference>
   </ItemGroup>
 
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\MVC.Common\MVC.Common.csproj" />
   </ItemGroup>

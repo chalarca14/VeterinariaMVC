@@ -1,0 +1,408 @@
+﻿@{
+    ViewData["Title"] = "Gestión de Mascotas";
+}
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <h1>Listado Mascotas</h1>
+    </div>
+    <div class="col-md-4">
+        <button type="button" class="btn btn-primary float-end" onclick="openModal(false)">
+            <i class="fa-solid fa-plus me-1"></i>
+            Crear Mascota
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <table class="table" id="tblMascotas">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Foto</th>
+                    <th>Nombre</th>
+                    <th>Propietario</th>
+                    <th>Especie</th>
+                    <th>Raza</th>
+                    <th>F. Nacimiento</th>
+                    <th>Peso (Kg)</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Unificado -->
+<div class="modal fade" id="modalMascota" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="idTitleMascota">Crear Mascota</h1>
+                <button type="button" class="btn-close" onclick="clearFormMascota()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formMascota" enctype="multipart/form-data">
+                    <section class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="col-form-label">Nombre</label>
+                            <input type="text" class="form-control" id="txtNombre" placeholder="Nombre de la mascota" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="col-form-label">Propietario</label>
+                            <select id="cmbPropietario" class="form-control" onchange="changeCmbPropietario()">
+                                <option disabled selected>Seleccionar</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <section class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="col-form-label">Especie</label>
+                            <select id="cmbEspecie" class="form-control" onchange="changeCmbEspecie()">
+                                <option disabled selected>Seleccionar</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="col-form-label">Raza</label>
+                            <select id="cmbRaza" class="form-control" onchange="changeCmbRaza()">
+                                <option disabled selected>Seleccione Primero una Especie</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <section class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="col-form-label">Fecha Nacimiento</label>
+                            <input type="date" class="form-control" id="txtFechaNacimiento" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="col-form-label">Peso (Kg)</label>
+                            <input type="number" step="0.01" class="form-control" id="txtPeso" placeholder="Ej. 5.5" />
+                        </div>
+                    </section>
+
+                    <section class="row mt-3" id="sectionFileMascota">
+                        <div class="col-md-12">
+                            <input type="file" class="d-none" id="fileMascota" accept="image/*" />
+                            <button type="button" class="btn btn-outline-primary w-100 text-start" id="btnFileMascota" onclick="triggerFileMascota()">
+                                <i class="fa-solid fa-plus me-1"></i>
+                                <span id="fileMascotaText">Seleccionar foto (opcional)</span>
+                            </button>
+                        </div>
+                    </section>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" onclick="clearFormMascota()">Cancelar</button>
+                <button id="btnModalSave" type="button" class="btn btn-outline-success" onclick="onSaveMascota()">Crear</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+        var listMascotas = [];
+        var listPropietarios = [];
+        var listEspecies = [];
+        var listRazas = [];
+
+        var idMascotaSelected = 0;
+        var idPropietarioSelected = 0;
+        var idEspecieSelected = 0;
+        var idRazaSelected = 0;
+        var fileMascotaDefaultText = 'Seleccionar foto (opcional)';
+
+        $(document).ready(function () {
+            getAllMascotas();
+            getPropietariosCombo();
+            getEspeciesCombo();
+            $('#fileMascota').on('change', onFileMascotaChange);
+        });
+
+        function triggerFileMascota() {
+            $('#fileMascota').click();
+        }
+
+        function resetFileMascotaLabel() {
+            $('#fileMascota').val('');
+            $('#fileMascotaText').text(fileMascotaDefaultText);
+        }
+
+        function onFileMascotaChange() {
+            var fileInput = $('#fileMascota')[0];
+            if (!fileInput.files || fileInput.files.length === 0) {
+                resetFileMascotaLabel();
+                return;
+            }
+            $('#fileMascotaText').text(fileInput.files[0].name);
+        }
+
+        function getAllMascotas() {
+            $.ajax({
+                url: '@Url.Action("GetAllMascotas", "Mascotas")',
+                method: 'GET',
+                dataType: 'json',
+                success: function (result) {
+                    listMascotas = result;
+                    loadTable(listMascotas);
+                },
+                error: function (error) {
+                    if (typeof errorHttp === 'function') errorHttp(error);
+                }
+            });
+        }
+
+        function loadTable(data) {
+            $('#tblMascotas').DataTable({
+                data: data,
+                destroy: true,
+                responsive: true,
+                columns: [
+                    {
+                        data: 'rutaFoto',
+                        render: function (data) {
+                            if (data) {
+                                return `<img src="${data}" class="rounded-circle" style="width:40px; height:40px; object-fit:cover;" />`;
+                            }
+                            return `<span class="badge bg-secondary">Sin Foto</span>`;
+                        }
+                    },
+                    { data: 'nombre' },
+                    { data: 'nombrePropietario' },
+                    { data: 'nombreEspecie' },
+                    { data: 'nombreRaza' },
+                    { data: 'fechaNacimiento' },
+                    { data: 'peso' },
+                    {
+                        data: null,
+                        render: function (data) {
+                            const id = data.idMascota;
+                            return `
+                                <button class="btn btn-warning" onclick="editMascota(${id})"><i class="fas fa-edit"></i> Editar</button>
+                                <button class="btn btn-danger" onclick="deleteMascota(${id})"><i class="far fa-trash-alt"></i> Eliminar</button>
+                            `;
+                        }
+                    }
+                ]
+            });
+        }
+
+        function getPropietariosCombo() {
+            $.ajax({
+                url: '@Url.Action("GetPropietariosCombo", "Mascotas")',
+                method: 'GET',
+                dataType: 'json',
+                success: function (result) {
+                    listPropietarios = result;
+                    loadCmbPropietario(listPropietarios);
+                }
+            });
+        }
+
+        function loadCmbPropietario(data, selected) {
+            $("#cmbPropietario").empty();
+            $("#cmbPropietario").append('<option value="" disabled selected>Seleccione un Propietario</option>');
+            $.each(data, function (i, item) {
+                if (item.id == selected) {
+                    $("#cmbPropietario").append('<option value="' + item.id + '" selected>' + item.nombreCompleto + '</option>');
+                } else {
+                    $("#cmbPropietario").append('<option value="' + item.id + '">' + item.nombreCompleto + '</option>');
+                }
+            });
+        }
+
+        function changeCmbPropietario() {
+            const cmb = document.getElementById("cmbPropietario");
+            idPropietarioSelected = cmb.options[cmb.selectedIndex].value;
+        }
+
+        function getEspeciesCombo() {
+            $.ajax({
+                url: '@Url.Action("GetEspeciesCombo", "Mascotas")',
+                method: 'GET',
+                dataType: 'json',
+                success: function (result) {
+                    listEspecies = result;
+                    loadCmbEspecie(listEspecies);
+                }
+            });
+        }
+
+        function loadCmbEspecie(data, selected) {
+            $("#cmbEspecie").empty();
+            $("#cmbEspecie").append('<option value="" disabled selected>Seleccione una Especie</option>');
+            $.each(data, function (i, item) {
+                if (item.id == selected) {
+                    $("#cmbEspecie").append('<option value="' + item.id + '" selected>' + item.nombre + '</option>');
+                } else {
+                    $("#cmbEspecie").append('<option value="' + item.id + '">' + item.nombre + '</option>');
+                }
+            });
+        }
+
+        function changeCmbEspecie() {
+            const cmb = document.getElementById("cmbEspecie");
+            idEspecieSelected = cmb.options[cmb.selectedIndex].value;
+            getRazasPorEspecieCombo(idEspecieSelected);
+        }
+
+        function getRazasPorEspecieCombo(idEspecie, selectedRaza) {
+            $.ajax({
+                url: '@Url.Action("GetRazasPorEspecieCombo", "Mascotas")',
+                method: 'GET',
+                data: { idEspecie: idEspecie },
+                dataType: 'json',
+                success: function (result) {
+                    listRazas = result;
+                    loadCmbRaza(listRazas, selectedRaza);
+                }
+            });
+        }
+
+        function loadCmbRaza(data, selected) {
+            $("#cmbRaza").empty();
+            $("#cmbRaza").append('<option value="" disabled selected>Seleccione una Raza</option>');
+            $.each(data, function (i, item) {
+                if (item.id == selected) {
+                    $("#cmbRaza").append('<option value="' + item.id + '" selected>' + item.nombre + '</option>');
+                } else {
+                    $("#cmbRaza").append('<option value="' + item.id + '">' + item.nombre + '</option>');
+                }
+            });
+        }
+
+        function changeCmbRaza() {
+            const cmb = document.getElementById("cmbRaza");
+            idRazaSelected = cmb.options[cmb.selectedIndex].value;
+        }
+
+        function openModal(isEdit) {
+            if (isEdit) {
+                $('#idTitleMascota').html('Editar Mascota');
+                $('#btnModalSave').html('Editar');
+            } else {
+                $('#idTitleMascota').html('Crear Mascota');
+                $('#btnModalSave').html('Crear');
+                resetFileMascotaLabel();
+            }
+            $('#modalMascota').modal('show');
+        }
+
+        function clearFormMascota() {
+            $('#txtNombre').val('');
+            $('#txtFechaNacimiento').val('');
+            $('#txtPeso').val('');
+            resetFileMascotaLabel();
+            loadCmbPropietario(listPropietarios);
+            loadCmbEspecie(listEspecies);
+            $("#cmbRaza").empty().append('<option disabled selected>Seleccione Primero una Especie</option>');
+            $('#modalMascota').modal('hide');
+
+            idMascotaSelected = 0;
+            idPropietarioSelected = 0;
+            idEspecieSelected = 0;
+            idRazaSelected = 0;
+        }
+
+        function editMascota(id) {
+        idMascotaSelected = id;
+        const entity = listMascotas.find(x => x.idMascota == id);
+
+        if (entity) {
+            $('#txtNombre').val(entity.nombre);
+            // Aseguramos formato YYYY-MM-DD para el input date
+            if (entity.fechaNacimiento) {
+                $('#txtFechaNacimiento').val(entity.fechaNacimiento);
+            }
+            $('#txtPeso').val(entity.peso);
+
+            idPropietarioSelected = entity.idPropietario;
+            idEspecieSelected = entity.idEspecie;
+            idRazaSelected = entity.idRaza;
+
+            loadCmbPropietario(listPropietarios, entity.idPropietario);
+            loadCmbEspecie(listEspecies, entity.idEspecie);
+            getRazasPorEspecieCombo(entity.idEspecie, entity.idRaza);
+
+            openModal(true);
+        }
+    }
+
+    function onSaveMascota() {
+        var formData = new FormData();
+        formData.append('Nombre', $('#txtNombre').val());
+        formData.append('IdPropietario', parseInt(idPropietarioSelected));
+        formData.append('IdEspecie', parseInt(idEspecieSelected));
+        formData.append('IdRaza', parseInt(idRazaSelected));
+    
+        if ($('#txtFechaNacimiento').val()) {
+            formData.append('FechaNacimiento', $('#txtFechaNacimiento').val());
+        }
+
+        // Convertimos a punto decimal estándar para evitar problemas culturales
+        var pesoVal = $('#txtPeso').val();
+        if (pesoVal !== '' && pesoVal !== null) {
+            formData.append('Peso', pesoVal.replace(',', '.'));
+        }
+
+        var fileInput = $('#fileMascota')[0];
+        if (fileInput.files && fileInput.files.length > 0) {
+            formData.append('FotoFile', fileInput.files[0]);
+        }
+
+        var url = idMascotaSelected === 0 ? '@Url.Action("AddMascota", "Mascotas")' : '@Url.Action("UpdateMascota", "Mascotas")';
+        if (idMascotaSelected !== 0) {
+            formData.append('IdMascota', idMascotaSelected);
+        }
+
+        $.ajax({
+            url: url,
+            method: 'POST', // O PUT según corresponda
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function () {
+                if (typeof toastMessage === 'function') {
+                    toastMessage('success', idMascotaSelected === 0 ? 'Registro creado exitosamente' : 'Registro actualizado exitosamente');
+                } else {
+                    Swal.fire('Éxito', 'Operación realizada correctamente', 'success');
+                }
+                clearFormMascota();
+                getAllMascotas();
+            },
+            error: function (error) {
+                if (typeof errorHttp === 'function') errorHttp(error);
+            }
+        });
+    }
+
+        function deleteMascota(id) {
+            var confirmPromise = typeof alertDelete === 'function' 
+                ? alertDelete() 
+                : Swal.fire({ title: '¿Eliminar?', text: 'No se podrá revertir', icon: 'warning', showCancelButton: true });
+
+            confirmPromise.then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteMascota", "Mascotas")',
+                        method: 'DELETE',
+                        data: { id: id },
+                        dataType: 'json',
+                        success: function () {
+                            if (typeof toastMessage === 'function') toastMessage('success', 'Registro eliminado exitosamente');
+                            getAllMascotas();
+                        },
+                        error: function (error) {
+                            if (typeof errorHttp === 'function') errorHttp(error);
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

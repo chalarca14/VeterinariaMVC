@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/VeterinariaMVC.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" asp-append-version="true" />
     <link href="https://cdn.datatables.net/v/dt/dt-2.3.8/datatables.min.css" rel="stylesheet" integrity="sha384-1BvCnyKidMPIGQGjvMn+w+90hHBhYJtF+R7os4NX2Abe7tSxWQadHRTSH5qb559A" crossorigin="anonymous">
 </head>
 <body>
@@ -21,19 +22,33 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
+                                <i class="fa-solid fa-house me-1"></i> Inicio
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Propietarios" asp-action="Index">
+                                <i class="fa-solid fa-users me-1"></i> Propietarios
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Propietarios" asp-action="Index">Propietarios</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Mascotas" asp-action="Index">
+                                <i class="fa-solid fa-paw me-1"></i> Mascotas
+                            </a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
+
+    <!-- Overlay y Spinner para AJAX -->
+    <div id="overlay" class="overlay" style="display:none;">
+        <div class="loader">
+            <p>Cargando...</p>
+        </div>
+    </div>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -45,100 +60,107 @@
             &copy; 2026 - VeterinariaMVC - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="https://cdn.datatables.net/v/dt/dt-2.3.8/datatables.min.js" integrity="sha384-kjkli48Tmhwhaghq0IIRm8gFmMdnihfu1ywAOyyGWYMsoZZi/6AX2fWzpsqahoFw" crossorigin="anonymous"></script>
+
+    <!-- Traducción a español en DataTables -->
+    <script>
+            $.extend(true, $.fn.dataTable.defaults, {
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/2.3.8/i18n/es-ES.json'
+                }
+            });
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
     <script>
+            function toastMessage(type, message) {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    }
+                });
 
-    function toastMessage(type, message) {
-    const Toast = Swal.mixin({
-    toast: true,
-    position: 'top-end',
-    showConfirmButton: false,
-    timer: 3000,
-    timerProgressBar: true,
-    didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer)
-    toast.addEventListener('mouseleave', Swal.resumeTimer)
-    }
-    });
+                Toast.fire({
+                    icon: type,
+                    title: message
+                });
+            }
 
-    Toast.fire({
-    icon: type,
-    title: message
-    });
-    }
+            function alertDelete() {
+                return Swal.fire({
+                    title: '¿Confirmar eliminación?',
+                    text: '¡No podrás revertir esto!',
+                    icon: 'question',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonText: 'Sí, eliminar!',
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                });
+            }
 
-    function alertDelete()
-    {
-    return Swal.fire({
-    title:'¿Confirmar eliminación?',
-    text:'¡No podrás revertir esto!',
-    icon:'question',
-    showCancelButton:true,
-    cancelButtonTexxt:'Cancelar',
-    confirmButtonText:'Si, eliminar!',
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
+            function alertSucces(message, title = null) {
+                const alertTitle = title != null ? title : "¡Exitoso!";
+                return Swal.fire({
+                    title: alertTitle,
+                    text: message,
+                    icon: 'success',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Aceptar!',
+                });
+            }
 
-    });
-    }
+            function alertWarning(message, title = null) {
+                const alertTitle = title != null ? title : "¡Alerta!";
+                return Swal.fire({
+                    title: alertTitle,
+                    text: message,
+                    icon: 'warning',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Aceptar!',
+                });
+            }
 
-    function alertSucces(message, title = null) {
-    const alertTitle = title != null ? title : "Exitoso!";
-    return Swal.fire({
-    title: alertTitle,
-    text: message,
-    icon: 'success',
-    confirmButtonColor: '#3085d6',
-    confirmButtonText: 'Aceptar!',
-    });
-    }
+            function alertError(message, title = null) {
+                const alertTitle = title != null ? title : "¡Opps!";
+                return Swal.fire({
+                    title: alertTitle,
+                    text: message,
+                    icon: 'error',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Aceptar!',
+                });
+            }
 
-    function alertWarning(message, title = null) {
-    const alertTitle = title != null ? title : "Alerta!";
-    return Swal.fire({
-    title: alertTitle,
-    text: message,
-    icon: 'warning',
-    confirmButtonColor: '#3085d6',
-    confirmButtonText: 'Aceptar!',
-    });
-    }
+            function errorHttp(error) {
+                var msg = (error.responseJSON && error.responseJSON.message) ? error.responseJSON.message : "Ha ocurrido un error inesperado.";
+                if ((error.status == 400) || (error.status == 401)) {
+                    alertWarning(msg);
+                } else {
+                    alertError(msg);
+                }
+            }
 
-    function alertError(message, title = null) {
-    const alertTitle = title != null ? title : "Opps!";
-    return Swal.fire({
-    title: alertTitle,
-    text: message,
-    icon: 'error',
-    confirmButtonColor: '#3085d6',
-    confirmButtonText: 'Aceptar!',
-    });
-    }
+            // Loader de peticiones AJAX
+            $(document).ajaxStart(function () {
+                $("#overlay").css("display", "flex");
+            });
 
-    function errorHttp(error) {
-        if ((error.status == 400) || (error.status == 401)) {
-            alertWarning(error.responseJSON.message)
-        } else {
-            alertError(error.responseJSON.message)
-        }
-    }
-
-
-    // Mostrar el loader durante las solicitudes AJAX
-    $(document).ajaxStart(function() {
-        $("#overlay").css("display", "flex");
-    });
-
-    $(document).ajaxStop(function() {
-        $("#overlay").hide();
-    });
-           
-</script>
+            $(document).ajaxStop(function () {
+                $("#overlay").hide();
+            });
+    </script>
 </body>
 </html>
