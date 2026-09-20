@@ -86,32 +86,24 @@ GO
 
 ## Funcionalidades Destacadas
 
-**Dashboard de Bienvenida**:
-  * Página de inicio (`Views/Home/Index.cshtml`) con métricas, accesos rápidos y presentación del proyecto.
-  * Hoja de estilos global (`site.css`) con gradientes, sombras suaves y tarjetas interactivas.
+- **Dashboard de Bienvenida**:
+  - Página de inicio (`Views/Home/Index.cshtml`) con métricas generales, accesos rápidos a módulos y presentación del proyecto.
+  - Estilos globales (`site.css`) integrando gradientes, sombras suaves y tarjetas interactivas.
 
-**Módulo Propietarios (CRUD SPA)**:
-  * Gestión completa de propietarios mediante peticiones asíncronas con jQuery AJAX y DataTables.
+- **Módulo Propietarios (CRUD SPA)**:
+  - Gestión completa de clientes (Crear, Leer, Actualizar, Eliminar) renderizada dinámicamente mediante peticiones asíncronas con jQuery AJAX y DataTables.
 
-**Módulo Mascotas (SPA con Carga de Imágenes)**:
-  * Registro, edición y eliminación de mascotas sin recarga de página.
-  * Carga y reemplazo de fotos recibidas mediante `IFormFile` y enviadas vía JavaScript `FormData`.
-  * Validaciones en servidor: extensión permitida (`.jpg`, `.jpeg`, `.png`, `.webp`) y peso máximo de 5 MB.
-  * Visualización de miniatura circular (`rounded-circle`), apertura en pantalla completa con visor **GLightbox** y opción para remover la imagen actual.
+- **Módulo Mascotas (SPA con Carga de Imágenes)**:
+  - Flujo CRUD completo de mascotas sin recarga de página.
+  - Procesamiento y reemplazo de fotografías utilizando `IFormFile` en backend y envíos multipart vía `FormData` en frontend.
+  - Validaciones estrictas en servidor: extensiones permitidas (`.jpg`, `.jpeg`, `.png`, `.webp`) y límite de tamaño de hasta 5 MB.
+  - Vista previa con miniatura circular (`rounded-circle`), apertura en caja de luz a pantalla completa mediante **GLightbox** y opción para eliminar la foto actual.
 
-**Combos en Cascada y Filtros Dinámicos (HU04)**:
-  * Selector relacional de **Raza** alimentado en cascada según la **Especie** seleccionada en los modales.
-  * Panel de filtros superior para filtrar la tabla de mascotas en tiempo real por Especie y Raza.
+- **Combos en Cascada y Filtros Dinámicos**:
+  - Carga relacional en cascada del desplegable **Raza** dependiendo de la **Especie** seleccionada dentro de los modales de registro/edición.
+  - Panel superior de filtros dinámicos para buscar e filtrar la tabla de mascotas en tiempo real por Especie y Raza.
 
-**UI / UX Mejorada**:
-  * DataTables traducido globalmente al español (`i18n/es-ES.json`).
-  * Alertas estandarizadas y notificaciones flotantes tipo Toast con **SweetAlert2**.
-  * Spinner / Overlay de carga visual automático durante solicitudes AJAX en segundo plano.
-
----
-
-## Tecnologías Utilizadas
-
-* **Backend**: .NET 8 Core (C#), Entity Framework Core 8, SQL Server.
-* **Frontend**: Razor Views, JavaScript / jQuery AJAX, DataTables 2.3.8, Bootstrap 5, SweetAlert2, GLightbox.
-* **Gestión de Proyecto**: Git / GitHub, Tablero Kanban en Trello.
+- **Experiencia de Usuario (UI / UX)**:
+  - Localización e internacionalización de DataTables completamente al español (`i18n/es-ES.json`).
+  - Feedback visual interactivo mediante alertas modales y notificaciones flotantes (Toasts) con **SweetAlert2**.
+  - Indicador visual de carga (Spinner / Overlay) activado automáticamente durante las peticiones AJAX en segundo plano.
