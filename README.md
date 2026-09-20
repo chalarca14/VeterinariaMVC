@@ -25,8 +25,7 @@ Proyecto web desarrollado como prueba técnica backend en **.NET 8 Core** bajo u
 3. **`Razas`**: Catálogo dependiente (`Id`, `IdEspecie`, `Nombre`) con FK a `Especies`.
 4. **`Mascotas`**: Registro de mascotas (`Id`, `Nombre`, `IdPropietario`, `IdRaza`, `FechaNacimiento`, `Peso`, `RutaFoto`) con FK a `Propietarios` y `Razas`.
 
-```sql
--- 1. Crear la base de datos
+## 1. Crear la base de datos
 CREATE DATABASE VeterinariaDb;
 GO
 USE VeterinariaDb;
@@ -107,3 +106,4 @@ GO
   - Localización e internacionalización de DataTables completamente al español (`i18n/es-ES.json`).
   - Feedback visual interactivo mediante alertas modales y notificaciones flotantes (Toasts) con **SweetAlert2**.
   - Indicador visual de carga (Spinner / Overlay) activado automáticamente durante las peticiones AJAX en segundo plano.
+
