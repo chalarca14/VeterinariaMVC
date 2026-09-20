@@ -14,6 +14,31 @@
     </div>
 </div>
 
+<!-- Panel de Filtros (HU04) -->
+<div class="card mb-3 shadow-sm">
+    <div class="card-body bg-light">
+        <div class="row align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-bold"><i class="fa-solid fa-filter me-1"></i>Filtrar por Especie</label>
+                <select id="cmbFiltroEspecie" class="form-select" onchange="onFiltroEspecieChange()">
+                    <option value="">-- Todas las Especies --</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Filtrar por Raza</label>
+                <select id="cmbFiltroRaza" class="form-select" onchange="aplicarFiltros()">
+                    <option value="">-- Todas las Razas --</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltros()">
+                    <i class="fa-solid fa-broom me-1"></i> Limpiar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-12">
         <table class="table" id="tblMascotas">
@@ -84,8 +109,28 @@
                         </div>
                     </section>
 
+                    <!-- VISTA PREVIA Y ELIMINACIÓN DE LA FOTO ACTUAL -->
+                    <section class="row mb-3" id="sectionFotoActual" style="display:none;">
+                        <div class="col-md-12">
+                            <label class="col-form-label fw-bold">Foto Actual</label>
+                            <div class="d-flex align-items-center gap-3 border p-2 rounded">
+                                <a id="linkFotoActual" href="#" class="glightbox">
+                                    <img id="imgFotoActual" src="" class="img-thumbnail" style="width:100px; height:100px; object-fit:cover; cursor:pointer;" title="Clic para ampliar" />
+                                </a>
+                                <div>
+                                    <p class="text-muted mb-1 small">Haz clic en la imagen para verla en pantalla completa.</p>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFotoActual()">
+                                        <i class="far fa-trash-alt me-1"></i> Quitar Foto
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- INPUT PARA SUBIR / CAMBIAR FOTO -->
                     <section class="row mt-3" id="sectionFileMascota">
                         <div class="col-md-12">
+                            <label class="col-form-label" id="lblFileMascota">Foto de la Mascota</label>
                             <input type="file" class="d-none" id="fileMascota" accept="image/*" />
                             <button type="button" class="btn btn-outline-primary w-100 text-start" id="btnFileMascota" onclick="triggerFileMascota()">
                                 <i class="fa-solid fa-plus me-1"></i>
@@ -115,11 +160,13 @@
         var idEspecieSelected = 0;
         var idRazaSelected = 0;
         var fileMascotaDefaultText = 'Seleccionar foto (opcional)';
+        var quitarFotoFlag = false; // Flag por si se decide quitar la foto actual
 
         $(document).ready(function () {
             getAllMascotas();
             getPropietariosCombo();
             getEspeciesCombo();
+            getEspeciesFiltroCombo();
             $('#fileMascota').on('change', onFileMascotaChange);
         });
 
@@ -148,7 +195,7 @@
                 dataType: 'json',
                 success: function (result) {
                     listMascotas = result;
-                    loadTable(listMascotas);
+                    aplicarFiltros();
                 },
                 error: function (error) {
                     if (typeof errorHttp === 'function') errorHttp(error);
@@ -166,7 +213,10 @@
                         data: 'rutaFoto',
                         render: function (data) {
                             if (data) {
-                                return `<img src="${data}" class="rounded-circle" style="width:40px; height:40px; object-fit:cover;" />`;
+                                return `
+                                    <a href="${data}" class="glightbox">
+                                        <img src="${data}" class="rounded-circle" style="width:40px; height:40px; object-fit:cover; cursor:pointer;" />
+                                    </a>`;
                             }
                             return `<span class="badge bg-secondary">Sin Foto</span>`;
                         }
@@ -189,8 +239,70 @@
                     }
                 ]
             });
+
+            // Inicializamos visor GLightbox para la tabla
+            if (typeof initGLightbox === 'function') {
+                initGLightbox('#tblMascotas .glightbox');
+            }
         }
 
+        /* --- Lógica de Filtros (HU04) --- */
+        function getEspeciesFiltroCombo() {
+            $.ajax({
+                url: '@Url.Action("GetEspeciesCombo", "Mascotas")',
+                method: 'GET',
+                dataType: 'json',
+                success: function (result) {
+                    $("#cmbFiltroEspecie").empty().append('<option value="">-- Todas las Especies --</option>');
+                    $.each(result, function (i, item) {
+                        $("#cmbFiltroEspecie").append(`<option value="${item.id}">${item.nombre}</option>`);
+                    });
+                }
+            });
+        }
+
+        function onFiltroEspecieChange() {
+            var idEspecie = $('#cmbFiltroEspecie').val();
+            $("#cmbFiltroRaza").empty().append('<option value="">-- Todas las Razas --</option>');
+
+            if (idEspecie) {
+                $.ajax({
+                    url: '@Url.Action("GetRazasPorEspecieCombo", "Mascotas")',
+                    method: 'GET',
+                    data: { idEspecie: idEspecie },
+                    dataType: 'json',
+                    success: function (result) {
+                        $.each(result, function (i, item) {
+                            $("#cmbFiltroRaza").append(`<option value="${item.id}">${item.nombre}</option>`);
+                        });
+                        aplicarFiltros();
+                    }
+                });
+            } else {
+                aplicarFiltros();
+            }
+        }
+
+        function aplicarFiltros() {
+            var idEspecie = $('#cmbFiltroEspecie').val();
+            var idRaza = $('#cmbFiltroRaza').val();
+
+            var listaFiltrada = listMascotas.filter(function (m) {
+                var cumpleEspecie = !idEspecie || m.idEspecie == idEspecie;
+                var cumpleRaza = !idRaza || m.idRaza == idRaza;
+                return cumpleEspecie && cumpleRaza;
+            });
+
+            loadTable(listaFiltrada);
+        }
+
+        function limpiarFiltros() {
+            $('#cmbFiltroEspecie').val('');
+            $('#cmbFiltroRaza').empty().append('<option value="">-- Todas las Razas --</option>');
+            loadTable(listMascotas);
+        }
+
+        /* --- Combos del Modal --- */
         function getPropietariosCombo() {
             $.ajax({
                 url: '@Url.Action("GetPropietariosCombo", "Mascotas")',
@@ -280,15 +392,20 @@
             idRazaSelected = cmb.options[cmb.selectedIndex].value;
         }
 
+        /* --- Modal CRUD --- */
         function openModal(isEdit) {
             if (isEdit) {
                 $('#idTitleMascota').html('Editar Mascota');
                 $('#btnModalSave').html('Editar');
+                fileMascotaDefaultText = 'Cambiar foto (opcional)';
             } else {
                 $('#idTitleMascota').html('Crear Mascota');
                 $('#btnModalSave').html('Crear');
-                resetFileMascotaLabel();
+                $('#sectionFotoActual').hide();
+                fileMascotaDefaultText = 'Seleccionar foto (opcional)';
             }
+            resetFileMascotaLabel();
+            quitarFotoFlag = false;
             $('#modalMascota').modal('show');
         }
 
@@ -297,6 +414,9 @@
             $('#txtFechaNacimiento').val('');
             $('#txtPeso').val('');
             resetFileMascotaLabel();
+            $('#sectionFotoActual').hide();
+            $('#imgFotoActual').attr('src', '');
+            $('#linkFotoActual').attr('href', '#');
             loadCmbPropietario(listPropietarios);
             loadCmbEspecie(listEspecies);
             $("#cmbRaza").empty().append('<option disabled selected>Seleccione Primero una Especie</option>');
@@ -306,84 +426,104 @@
             idPropietarioSelected = 0;
             idEspecieSelected = 0;
             idRazaSelected = 0;
+            quitarFotoFlag = false;
         }
 
         function editMascota(id) {
-        idMascotaSelected = id;
-        const entity = listMascotas.find(x => x.idMascota == id);
+            idMascotaSelected = id;
+            const entity = listMascotas.find(x => x.idMascota == id);
 
-        if (entity) {
-            $('#txtNombre').val(entity.nombre);
-            // Aseguramos formato YYYY-MM-DD para el input date
-            if (entity.fechaNacimiento) {
-                $('#txtFechaNacimiento').val(entity.fechaNacimiento);
-            }
-            $('#txtPeso').val(entity.peso);
-
-            idPropietarioSelected = entity.idPropietario;
-            idEspecieSelected = entity.idEspecie;
-            idRazaSelected = entity.idRaza;
-
-            loadCmbPropietario(listPropietarios, entity.idPropietario);
-            loadCmbEspecie(listEspecies, entity.idEspecie);
-            getRazasPorEspecieCombo(entity.idEspecie, entity.idRaza);
-
-            openModal(true);
-        }
-    }
-
-    function onSaveMascota() {
-        var formData = new FormData();
-        formData.append('Nombre', $('#txtNombre').val());
-        formData.append('IdPropietario', parseInt(idPropietarioSelected));
-        formData.append('IdEspecie', parseInt(idEspecieSelected));
-        formData.append('IdRaza', parseInt(idRazaSelected));
-    
-        if ($('#txtFechaNacimiento').val()) {
-            formData.append('FechaNacimiento', $('#txtFechaNacimiento').val());
-        }
-
-        // Convertimos a punto decimal estándar para evitar problemas culturales
-        var pesoVal = $('#txtPeso').val();
-        if (pesoVal !== '' && pesoVal !== null) {
-            formData.append('Peso', pesoVal.replace(',', '.'));
-        }
-
-        var fileInput = $('#fileMascota')[0];
-        if (fileInput.files && fileInput.files.length > 0) {
-            formData.append('FotoFile', fileInput.files[0]);
-        }
-
-        var url = idMascotaSelected === 0 ? '@Url.Action("AddMascota", "Mascotas")' : '@Url.Action("UpdateMascota", "Mascotas")';
-        if (idMascotaSelected !== 0) {
-            formData.append('IdMascota', idMascotaSelected);
-        }
-
-        $.ajax({
-            url: url,
-            method: 'POST', // O PUT según corresponda
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            success: function () {
-                if (typeof toastMessage === 'function') {
-                    toastMessage('success', idMascotaSelected === 0 ? 'Registro creado exitosamente' : 'Registro actualizado exitosamente');
-                } else {
-                    Swal.fire('Éxito', 'Operación realizada correctamente', 'success');
+            if (entity) {
+                $('#txtNombre').val(entity.nombre);
+                if (entity.fechaNacimiento) {
+                    $('#txtFechaNacimiento').val(entity.fechaNacimiento);
                 }
-                clearFormMascota();
-                getAllMascotas();
-            },
-            error: function (error) {
-                if (typeof errorHttp === 'function') errorHttp(error);
+                $('#txtPeso').val(entity.peso);
+
+                idPropietarioSelected = entity.idPropietario;
+                idEspecieSelected = entity.idEspecie;
+                idRazaSelected = entity.idRaza;
+
+                loadCmbPropietario(listPropietarios, entity.idPropietario);
+                loadCmbEspecie(listEspecies, entity.idEspecie);
+                getRazasPorEspecieCombo(entity.idEspecie, entity.idRaza);
+
+                // Mostramos la foto actual si existe
+                if (entity.rutaFoto) {
+                    $('#imgFotoActual').attr('src', entity.rutaFoto);
+                    $('#linkFotoActual').attr('href', entity.rutaFoto);
+                    $('#sectionFotoActual').show();
+
+                    if (typeof initGLightbox === 'function') {
+                        initGLightbox('#modalMascota .glightbox');
+                    }
+                } else {
+                    $('#sectionFotoActual').hide();
+                }
+
+                openModal(true);
             }
-        });
-    }
+        }
+
+        function eliminarFotoActual() {
+            $('#sectionFotoActual').hide();
+            quitarFotoFlag = true;
+            if (typeof toastMessage === 'function') {
+                toastMessage('info', 'La foto actual se eliminará al guardar los cambios.');
+            }
+        }
+
+        function onSaveMascota() {
+            var formData = new FormData();
+            formData.append('Nombre', $('#txtNombre').val());
+            formData.append('IdPropietario', parseInt(idPropietarioSelected));
+            formData.append('IdEspecie', parseInt(idEspecieSelected));
+            formData.append('IdRaza', parseInt(idRazaSelected));
+
+            if ($('#txtFechaNacimiento').val()) {
+                formData.append('FechaNacimiento', $('#txtFechaNacimiento').val());
+            }
+
+            var pesoVal = $('#txtPeso').val();
+            if (pesoVal !== '' && pesoVal !== null) {
+                formData.append('Peso', pesoVal.replace(',', '.'));
+            }
+
+            var fileInput = $('#fileMascota')[0];
+            if (fileInput.files && fileInput.files.length > 0) {
+                formData.append('FotoFile', fileInput.files[0]);
+            }
+
+            var url = idMascotaSelected === 0 ? '@Url.Action("AddMascota", "Mascotas")' : '@Url.Action("UpdateMascota", "Mascotas")';
+            if (idMascotaSelected !== 0) {
+                formData.append('IdMascota', idMascotaSelected);
+            }
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function () {
+                    if (typeof toastMessage === 'function') {
+                        toastMessage('success', idMascotaSelected === 0 ? 'Registro creado exitosamente' : 'Registro actualizado exitosamente');
+                    } else {
+                        Swal.fire('Éxito', 'Operación realizada correctamente', 'success');
+                    }
+                    clearFormMascota();
+                    getAllMascotas();
+                },
+                error: function (error) {
+                    if (typeof errorHttp === 'function') errorHttp(error);
+                }
+            });
+        }
 
         function deleteMascota(id) {
-            var confirmPromise = typeof alertDelete === 'function' 
-                ? alertDelete() 
+            var confirmPromise = typeof alertDelete === 'function'
+                ? alertDelete()
                 : Swal.fire({ title: '¿Eliminar?', text: 'No se podrá revertir', icon: 'warning', showCancelButton: true });
 
             confirmPromise.then((result) => {
