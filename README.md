@@ -86,24 +86,24 @@ GO
 
 ## Funcionalidades Destacadas
 
-* **Dashboard de Bienvenida**:
+**Dashboard de Bienvenida**:
   * Página de inicio (`Views/Home/Index.cshtml`) con métricas, accesos rápidos y presentación del proyecto.
   * Hoja de estilos global (`site.css`) con gradientes, sombras suaves y tarjetas interactivas.
 
-* **Módulo Propietarios (CRUD SPA)**:
+**Módulo Propietarios (CRUD SPA)**:
   * Gestión completa de propietarios mediante peticiones asíncronas con jQuery AJAX y DataTables.
 
-* **Módulo Mascotas (SPA con Carga de Imágenes)**:
+**Módulo Mascotas (SPA con Carga de Imágenes)**:
   * Registro, edición y eliminación de mascotas sin recarga de página.
   * Carga y reemplazo de fotos recibidas mediante `IFormFile` y enviadas vía JavaScript `FormData`.
   * Validaciones en servidor: extensión permitida (`.jpg`, `.jpeg`, `.png`, `.webp`) y peso máximo de 5 MB.
   * Visualización de miniatura circular (`rounded-circle`), apertura en pantalla completa con visor **GLightbox** y opción para remover la imagen actual.
 
-* **Combos en Cascada y Filtros Dinámicos (HU04)**:
+**Combos en Cascada y Filtros Dinámicos (HU04)**:
   * Selector relacional de **Raza** alimentado en cascada según la **Especie** seleccionada en los modales.
   * Panel de filtros superior para filtrar la tabla de mascotas en tiempo real por Especie y Raza.
 
-* **UI / UX Mejorada**:
+**UI / UX Mejorada**:
   * DataTables traducido globalmente al español (`i18n/es-ES.json`).
   * Alertas estandarizadas y notificaciones flotantes tipo Toast con **SweetAlert2**.
   * Spinner / Overlay de carga visual automático durante solicitudes AJAX en segundo plano.
